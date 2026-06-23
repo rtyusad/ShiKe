@@ -1,0 +1,175 @@
+import SwiftUI
+
+/// 帧浏览标记页 — 阶段一核心 UI
+/// 展示雪碧图帧时间线，供用户滑动浏览并标记关键步骤节点
+struct FrameBrowserView: View {
+    let markerVM: FrameMarkerViewModel
+    let addVM: AddRecipeViewModel
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // 视频信息栏
+            videoInfoBar
+
+            // 大图预览区
+            largePreview
+
+            // 时间线
+            FrameTimelineView(vm: markerVM)
+                .frame(height: 120)
+
+            // 底部操作
+            bottomActions
+        }
+        .background(Color.ricePaper)
+        .navigationTitle("标记步骤帧")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Text("已选: \(markerVM.markedCount)")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.scallionGreen)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.scallionGreen.opacity(0.1))
+                    )
+            }
+        }
+    }
+
+    // MARK: - 视频信息栏
+
+    private var videoInfoBar: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "play.rectangle")
+                .font(.title3)
+                .foregroundColor(.wokOrange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(markerVM.videoTitle)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.soyBrown)
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    Text("@\(markerVM.videoAuthor)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Text(markerVM.bvNumber)
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.6))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+            }
+
+            Spacer()
+
+            Text(formatDuration(markerVM.durationSeconds))
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Color.white.opacity(0.8))
+    }
+
+    // MARK: - 大图预览
+
+    private var largePreview: some View {
+        VStack(spacing: 8) {
+            if let frame = markerVM.selectedFrame {
+                ZStack {
+                    WokRingFrame(size: nil) {
+                        Image(uiImage: frame.image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    }
+
+                    // 时间戳标签
+                    Text(formatDuration(frame.timestampSeconds))
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.black.opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                        .padding(8)
+                }
+            } else {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.1))
+                    .overlay {
+                        Text("选择一帧查看大图")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - 底部操作
+
+    private var bottomActions: some View {
+        HStack(spacing: 16) {
+            Button {
+                dismiss()
+            } label: {
+                Text("取消")
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                // 同步已标记的时间戳到 AddRecipeViewModel
+                let timestamps = markerVM.sortedMarkedTimestamps()
+                for ts in timestamps {
+                    if !addVM.markedTimestamps.contains(ts) {
+                        addVM.markedTimestamps.append(ts)
+                    }
+                }
+                addVM.markedTimestamps.sort()
+                Task { await addVM.generateSteps() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark")
+                    Text("生成步骤卡片 (\(markerVM.markedCount)帧)")
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    markerVM.canGenerate
+                        ? Color.wokOrange
+                        : Color.gray.opacity(0.4)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .disabled(!markerVM.canGenerate)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Color.white.opacity(0.9))
+    }
+
+    // MARK: - Helper
+
+    private func formatDuration(_ seconds: Int) -> String {
+        let m = seconds / 60
+        let s = seconds % 60
+        return String(format: "%d:%02d", m, s)
+    }
+}
