@@ -3,7 +3,7 @@ import SwiftUI
 /// 主 TabBar 容器
 struct MainTabView: View {
     @State private var selectedTab: AppTab = .library
-    @Environment(AppContainerKey.self) private var container
+    @Environment(\.appContainer) private var container
 
     var body: some View {
         TabView(selection: $selectedTab) {

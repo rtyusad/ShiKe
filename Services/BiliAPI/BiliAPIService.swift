@@ -1,5 +1,5 @@
 import Foundation
-
+import OSLog
 /// B 站 API 基础 HTTP 客户端
 /// 所有 B 站 API 调用都通过此 service 发出
 /// 统一处理 User-Agent、超时、错误码

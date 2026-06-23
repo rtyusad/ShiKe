@@ -1,6 +1,6 @@
 import Foundation
 import StoreKit
-
+import OSLog
 /// 内购服务（StoreKit 2）
 /// 处理 ¥8 终身买断 (Non-Consumable IAP) + 恢复购买
 @Observable

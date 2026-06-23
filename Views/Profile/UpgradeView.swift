@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 付费升级页 — ¥8 终身买断
+@MainActor
 struct UpgradeView: View {
     @State var vm: UpgradeViewModel
     @Environment(\.dismiss) private var dismiss

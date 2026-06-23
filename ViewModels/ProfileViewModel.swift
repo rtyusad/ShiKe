@@ -1,6 +1,6 @@
 import SwiftUI
 import Observation
-
+import OSLog
 /// 个人中心 ViewModel
 @MainActor
 @Observable

@@ -1,6 +1,6 @@
 import UIKit
 import AVFoundation
-
+import OSLog
 /// I 帧提取器
 ///
 /// 使用 AVAssetImageGenerator 从本地 mini-mp4 提取高清 I 帧。

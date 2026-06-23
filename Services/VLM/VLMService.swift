@@ -1,6 +1,6 @@
 import UIKit
 import Foundation
-
+import OSLog
 /// 云端 VLM (Vision Language Model) 服务
 ///
 /// MVP 阶段使用 DashScope Qwen-VL API 将步骤截图转化为文字描述。

@@ -1,5 +1,5 @@
 import Foundation
-
+import OSLog
 /// mini-mp4 拼装器
 ///
 /// 将 init segment + 单个 GOP subsegment 组装为合法的 mini-mp4 文件。

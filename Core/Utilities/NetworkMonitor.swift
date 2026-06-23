@@ -1,6 +1,6 @@
 import Network
 import Foundation
-
+import OSLog
 /// 网络状态监控
 /// 用于弱网提示、蜂窝网络用量确认、自适应超时
 @Observable

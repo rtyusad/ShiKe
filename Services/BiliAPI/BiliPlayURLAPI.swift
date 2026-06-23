@@ -1,5 +1,5 @@
 import Foundation
-
+import OSLog
 /// B 站视频流 URL API（需 WBI 签名 + 用户 cookie）
 /// GET /x/player/playurl?bvid={BV号}&cid={cid}&fnval=16&fnver=0&fourk=1
 /// 返回 DASH 格式视频流 URL + SegmentBase（含 sidx box 定位信息）

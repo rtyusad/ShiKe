@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 全屏跟做模式 — "夜间厨房"沉浸式界面
+@MainActor
 struct CookingView: View {
     @State var vm: CookingViewModel
     @Environment(\.dismiss) private var dismiss

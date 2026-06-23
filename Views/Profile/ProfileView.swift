@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 个人中心页
+@MainActor
 struct ProfileView: View {
     @State var vm: ProfileViewModel
     @Environment(\.appContainer) private var container

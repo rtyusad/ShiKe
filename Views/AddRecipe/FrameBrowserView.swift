@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 帧浏览标记页 — 阶段一核心 UI
 /// 展示雪碧图帧时间线，供用户滑动浏览并标记关键步骤节点
+@MainActor
 struct FrameBrowserView: View {
     let markerVM: FrameMarkerViewModel
     let addVM: AddRecipeViewModel
@@ -135,12 +136,7 @@ struct FrameBrowserView: View {
             Button {
                 // 同步已标记的时间戳到 AddRecipeViewModel
                 let timestamps = markerVM.sortedMarkedTimestamps()
-                for ts in timestamps {
-                    if !addVM.markedTimestamps.contains(ts) {
-                        addVM.markedTimestamps.append(ts)
-                    }
-                }
-                addVM.markedTimestamps.sort()
+                addVM.syncMarkedTimestamps(timestamps)
                 Task { await addVM.generateSteps() }
             } label: {
                 HStack(spacing: 6) {

@@ -1,6 +1,6 @@
 import SwiftUI
 import SwiftData
-
+import OSLog
 /// 食刻 App 主入口
 /// 启动时执行孤儿临时文件清理、注册网络监控
 @main

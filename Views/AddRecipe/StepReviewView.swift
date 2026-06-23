@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 步骤确认页 — 展示提取的截图 + VLM 生成的文字，供用户确认后保存
+@MainActor
 struct StepReviewView: View {
     @Bindable var vm: AddRecipeViewModel
     @Environment(\.dismiss) private var dismiss
@@ -94,7 +95,7 @@ struct StepReviewView: View {
                     do {
                         _ = try await vm.saveRecipe(title: recipeTitle)
                     } catch {
-                        vm.error = error as? AppError
+                        vm.setError(error as? AppError)
                     }
                 }
             } label: {

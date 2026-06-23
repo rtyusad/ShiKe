@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 食谱库首页
+@MainActor
 struct LibraryView: View {
     @State var vm: LibraryViewModel
     @Environment(\.appContainer) private var container

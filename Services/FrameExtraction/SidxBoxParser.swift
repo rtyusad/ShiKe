@@ -1,5 +1,5 @@
 import Foundation
-
+import OSLog
 /// ISO/IEC 14496-12 sidx box 解析器
 ///
 /// 支持 version 0 和 version 1 两种格式。
@@ -201,7 +201,7 @@ struct SidxBoxParser {
 extension SidxBoxParser.ParseResult {
 
     /// 二分查找最接近目标时间的 subsegment
-    func findSubsegment(for timestamp: Double) -> SubsegmentEntry? {
+    func findSubsegment(for timestamp: Double) -> SidxBoxParser.SubsegmentEntry? {
         guard !entries.isEmpty else { return nil }
 
         var low = 0, high = entries.count - 1
@@ -228,7 +228,7 @@ extension SidxBoxParser.ParseResult {
     func findSubsegmentWithRetry(
         for timestamp: Double,
         windowSeconds: Double = 3.0
-    ) -> SubsegmentEntry? {
+    ) -> SidxBoxParser.SubsegmentEntry? {
         if let result = findSubsegment(for: timestamp) {
             return result
         }

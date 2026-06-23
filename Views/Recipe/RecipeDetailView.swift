@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 食谱详情页 — 步骤卡片浏览
+@MainActor
 struct RecipeDetailView: View {
     @State var vm: RecipeDetailViewModel
     @Environment(\.appContainer) private var container

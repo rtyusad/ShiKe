@@ -1,5 +1,5 @@
 import Foundation
-
+import OSLog
 /// 临时文件清理策略
 /// - App 启动时清理残留孤儿 mp4
 /// - App 进入后台时清理

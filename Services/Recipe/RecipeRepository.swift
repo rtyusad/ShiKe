@@ -1,6 +1,6 @@
 import Foundation
 import SwiftData
-
+import OSLog
 /// 食谱数据仓库
 /// 封装 SwiftData CRUD 操作 + 级联文件清理
 @ModelActor

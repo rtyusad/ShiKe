@@ -1,5 +1,5 @@
 import UIKit
-
+import OSLog
 /// App 生命周期委托（处理后台进入时的清理逻辑）
 final class AppDelegate: NSObject, UIApplicationDelegate {
 

@@ -25,6 +25,7 @@
 		306AA89728B082FDA34E7F5F /* RecipeDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372F4F2B6A8CA8814684A732 /* RecipeDetailViewModel.swift */; };
 		3D40EFABCD264D4384BBC432 /* VLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF6148B965620F0FD20EA86 /* VLMService.swift */; };
 		3EF85AA4A36953466A0780E6 /* FileCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851A44A9062BF32B37D6B7A4 /* FileCleanup.swift */; };
+		41A10B7D14D9A08393D28869 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AD18889ACA41012414728A12 /* Assets.xcassets */; };
 		435420BAF1839E002118A0E1 /* UpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C65821E84873006AF174CAC /* UpgradeView.swift */; };
 		44319D4CAD1BC00436596943 /* Step.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EACE04FE81A177422011E9F /* Step.swift */; };
 		4ABBA047E25155C2487ABB3F /* WbiSigner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB32166A0E89CEDFF9B7941 /* WbiSigner.swift */; };
@@ -104,6 +105,7 @@
 		A9A702C79EFFC867D4B67B5D /* StepReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepReviewView.swift; sourceTree = "<group>"; };
 		AA824E091AEDFA1E3A045B81 /* FreeSlotIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeSlotIndicator.swift; sourceTree = "<group>"; };
 		AB45DE7D1202AF8F7291A2CE /* GOPDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GOPDownloader.swift; sourceTree = "<group>"; };
+		AD18889ACA41012414728A12 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BAC68F271C8C4BE9193FD3ED /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		BB69BCCC47E5FE61C89A9DD1 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		BBF8C54A52A53C7E35435FC6 /* CookingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookingView.swift; sourceTree = "<group>"; };
@@ -223,12 +225,21 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
+		45F65B735F844A388D98A86C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AD18889ACA41012414728A12 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		4E789846900C78BF4F4E2C5D = {
 			isa = PBXGroup;
 			children = (
 				C50A98FE5A7FEBDE40B6A00B /* App */,
 				E66EF986F6213E35486A1DF2 /* Core */,
 				4184A23C546D3A553FD62C51 /* Models */,
+				45F65B735F844A388D98A86C /* Resources */,
 				DB6428C0AF8DDA6AEE0FE24D /* Services */,
 				646C3CD265640609BE96F182 /* ViewModels */,
 				30A41155C12BA5617C4FDD48 /* Views */,
@@ -371,6 +382,7 @@
 			buildConfigurationList = 88E108097AAE0D27B1F7FA71 /* Build configuration list for PBXNativeTarget "ShiKe" */;
 			buildPhases = (
 				3C3A8EB0C2782614CC97838C /* Sources */,
+				9D4D07EF6852E9B1E3C7062A /* Resources */,
 			);
 			buildRules = (
 			);
@@ -415,6 +427,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9D4D07EF6852E9B1E3C7062A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				41A10B7D14D9A08393D28869 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3C3A8EB0C2782614CC97838C /* Sources */ = {
@@ -491,6 +514,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -512,6 +536,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shike.ios;
 				PRODUCT_NAME = "食刻";
 				SDKROOT = iphoneos;
@@ -528,6 +553,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -549,6 +575,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.shike.ios;
 				PRODUCT_NAME = "食刻";

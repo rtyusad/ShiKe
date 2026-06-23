@@ -1,6 +1,6 @@
 import UIKit
 import Foundation
-
+import OSLog
 /// B 站视频雪碧图 API (零签名)
 /// GET /x/player/videoshot?bvid={BV号}&index=1
 ///

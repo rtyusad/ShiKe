@@ -1,6 +1,6 @@
 import SwiftUI
 import Observation
-
+import OSLog
 /// 添加食谱流程 ViewModel
 /// 管理从粘贴链接到保存食谱的完整生命周期
 @MainActor
@@ -119,6 +119,16 @@ final class AddRecipeViewModel {
     /// 是否已标记
     func isMarked(_ timestamp: Int) -> Bool {
         markedTimestamps.contains(timestamp)
+    }
+
+    /// 设置错误状态（供外部 View 调用）
+    func setError(_ newError: AppError?) {
+        error = newError
+    }
+
+    /// 同步 FrameMarker 已标记的时间戳
+    func syncMarkedTimestamps(_ timestamps: [Int]) {
+        markedTimestamps = timestamps.sorted()
     }
 
     /// 生成步骤卡片（阶段二：sidx+GOP 高清提取 + VLM）

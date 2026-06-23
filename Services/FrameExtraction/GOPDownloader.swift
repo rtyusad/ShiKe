@@ -1,5 +1,5 @@
 import Foundation
-
+import OSLog
 /// GOP subsegment 下载器
 /// 使用 HTTP Range 请求下载视频流的特定字节范围
 ///

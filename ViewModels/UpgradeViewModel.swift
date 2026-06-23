@@ -24,9 +24,9 @@ final class UpgradeViewModel {
         do {
             purchaseSuccess = try await iapService.purchaseLifetime()
         } catch let appError as AppError {
-            error = appError
+            self.error = appError
         } catch {
-            error = .apiFailed(0, error.localizedDescription)
+            self.error = .apiFailed(0, error.localizedDescription)
         }
 
         isPurchasing = false
@@ -34,17 +34,17 @@ final class UpgradeViewModel {
 
     func restorePurchases() async {
         isPurchasing = true
-        error = nil
+        self.error = nil
 
         do {
             purchaseSuccess = try await iapService.restorePurchases()
             if !purchaseSuccess {
-                error = .apiFailed(0, "未找到已购买记录")
+                self.error = .apiFailed(0, "未找到已购买记录")
             }
         } catch let appError as AppError {
-            error = appError
+            self.error = appError
         } catch {
-            error = .apiFailed(0, error.localizedDescription)
+            self.error = .apiFailed(0, error.localizedDescription)
         }
 
         isPurchasing = false

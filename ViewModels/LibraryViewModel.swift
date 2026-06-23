@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 import Observation
-
+import OSLog
 /// 食谱库首页 ViewModel
 @MainActor
 @Observable

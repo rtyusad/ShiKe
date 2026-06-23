@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 添加食谱页 — 粘贴链接入口
+@MainActor
 struct AddRecipeView: View {
     @State var vm: AddRecipeViewModel
     @Environment(\.appContainer) private var container
