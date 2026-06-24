@@ -166,8 +166,7 @@ struct FrameBrowserView: View {
             Spacer()
 
             Button {
-                let timestamps = markerVM.sortedMarkedTimestamps()
-                addVM.syncMarkedTimestamps(timestamps)
+                addVM.syncMarkedTimestamps()
                 Task { await addVM.generateSteps() }
             } label: {
                 HStack(spacing: 6) {

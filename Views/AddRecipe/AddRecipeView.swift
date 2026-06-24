@@ -12,15 +12,9 @@ struct AddRecipeView: View {
             case .urlInput, .fetching:
                 urlInputView
             case .frameBrowsing:
-                if let videoInfo = vm.videoInfo {
+                if let markerVM = vm.frameMarkerVM {
                     FrameBrowserView(
-                        markerVM: FrameMarkerViewModel(
-                            frames: vm.frameThumbnails,
-                            videoTitle: videoInfo.title,
-                            videoAuthor: videoInfo.authorName,
-                            bvNumber: videoInfo.bvid,
-                            durationSeconds: videoInfo.durationSeconds
-                        ),
+                        markerVM: markerVM,
                         addVM: vm
                     )
                 }

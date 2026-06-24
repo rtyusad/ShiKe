@@ -17,9 +17,10 @@ struct CookingView: View {
                 cookingContent(step: step)
             }
         }
+        .navigationBarHidden(true)
         .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
         .statusBarHidden(true)
+        .interactiveDismissDisabled()
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true  // 保持屏幕常亮
         }
@@ -32,6 +33,27 @@ struct CookingView: View {
 
     private func cookingContent(step: Step) -> some View {
         VStack(spacing: 0) {
+            // 顶部返回按钮
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "xmark")
+                        Text("退出跟做")
+                    }
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+
             // 步骤计数器
             Text("🍳 \(vm.currentStepIndex + 1) / \(vm.totalSteps)")
                 .font(.system(size: 22, weight: .bold))

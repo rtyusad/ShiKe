@@ -36,6 +36,8 @@ final class AddRecipeViewModel {
     private(set) var videoInfo: BiliInfoAPI.VideoInfo?
     private(set) var frameThumbnails: [SpriteSheetParser.FrameThumbnail] = []
     private(set) var markedTimestamps: [Int] = []
+    /// 持久化帧标记 VM（避免 body 重算时重建导致标记丢失）
+    private(set) var frameMarkerVM: FrameMarkerViewModel?
 
     // 高清提取进度
     private(set) var extractionProgress: String = ""
@@ -101,6 +103,13 @@ final class AddRecipeViewModel {
 
             self.videoInfo = videoInfo
             self.frameThumbnails = frames
+            self.frameMarkerVM = FrameMarkerViewModel(
+                frames: frames,
+                videoTitle: videoInfo.title,
+                videoAuthor: videoInfo.authorName,
+                bvNumber: videoInfo.bvid,
+                durationSeconds: videoInfo.durationSeconds
+            )
             self.flowState = .frameBrowsing
 
         } catch let error as AppError {
@@ -132,9 +141,10 @@ final class AddRecipeViewModel {
         error = newError
     }
 
-    /// 同步 FrameMarker 已标记的时间戳
-    func syncMarkedTimestamps(_ timestamps: [Int]) {
-        markedTimestamps = timestamps.sorted()
+    /// 从持久化的 FrameMarkerVM 同步已标记的时间戳
+    func syncMarkedTimestamps() {
+        guard let markerVM = frameMarkerVM else { return }
+        markedTimestamps = markerVM.sortedMarkedTimestamps()
     }
 
     /// 生成步骤卡片（阶段二：sidx+GOP 高清提取 + VLM）
@@ -351,8 +361,10 @@ final class AddRecipeViewModel {
         urlText = ""
         videoInfo = nil
         frameThumbnails = []
+        frameMarkerVM = nil
         markedTimestamps = []
         extractedImages = []
+        extractedImageURLs = []
         stepDescriptions = []
         extractionProgress = ""
         error = nil
