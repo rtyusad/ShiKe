@@ -46,14 +46,13 @@ targets:
       configs:
         Debug:
           CODE_SIGN_STYLE: Automatic
-          DEVELOPMENT_TEAM: ""
+          DEVELOPMENT_TEAM: "937UQ22LA8"
           PROVISIONING_PROFILE_SPECIFIER: ""
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
           ONLY_ACTIVE_ARCH: YES
         Release:
-          CODE_SIGN_STYLE: Manual
-          CODE_SIGN_IDENTITY: "Apple Distribution"
-          DEVELOPMENT_TEAM: ""
+          CODE_SIGN_STYLE: Automatic
+          DEVELOPMENT_TEAM: "937UQ22LA8"
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
           SWIFT_COMPILATION_MODE: wholemodule
           SWIFT_OPTIMIZATION_LEVEL: "-O"
