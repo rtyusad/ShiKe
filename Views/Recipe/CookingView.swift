@@ -70,7 +70,8 @@ struct CookingView: View {
                         switch phase {
                         case .success(let image):
                             image.resizable().aspectRatio(contentMode: .fit)
-                                .frame(maxHeight: 300)
+                                .frame(maxWidth: .infinity, maxHeight: 300)
+                                .clipped()
                         case .failure, .empty:
                             Rectangle().fill(Color.gray.opacity(0.2))
                                 .frame(height: 200)

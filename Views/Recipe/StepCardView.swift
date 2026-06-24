@@ -20,8 +20,16 @@ struct StepCardView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .frame(maxHeight: 260)
+                                .frame(maxWidth: .infinity, maxHeight: 260)
+                                .clipped()
                                 .scaleEffect(scale)
+                                .gesture(
+                                    MagnificationGesture()
+                                        .onChanged { value in scale = value }
+                                        .onEnded { _ in
+                                            withAnimation { scale = max(1.0, min(scale, 3.0)) }
+                                        }
+                                )
                                 .gesture(
                                     MagnificationGesture()
                                         .onChanged { value in scale = value }
