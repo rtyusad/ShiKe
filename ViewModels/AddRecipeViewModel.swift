@@ -238,7 +238,7 @@ final class AddRecipeViewModel {
     }
 
     /// 保存食谱
-    func saveRecipe(title: String? = nil) async throws -> Recipe {
+    func saveRecipe(title: String? = nil) async throws {
         guard let videoInfo = videoInfo else {
             throw AppError.apiFailed(0, "视频信息丢失")
         }
@@ -249,54 +249,32 @@ final class AddRecipeViewModel {
             }
             return videoInfo.title
         }()
-        let recipe = Recipe(
-            title: finalTitle,
-            bvNumber: videoInfo.bvid,
-            sourceURL: "https://www.bilibili.com/video/\(videoInfo.bvid)",
-            sourceAuthor: videoInfo.authorName,
-            cookTimeMinutes: nil,
-            difficultyLevel: 2
-        )
 
         let docDir = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
         let imageDir = docDir.appendingPathComponent("Images")
         try FileManager.default.createDirectory(at: imageDir, withIntermediateDirectories: true)
 
-        // 合并 extractedImages 和 extractedImageURLs，确保索引一致
         let count = extractedImages.count
         let urlCount = extractedImageURLs.count
+        var stepDataList: [RecipeSaveData.StepData] = []
 
-        // 创建 Step + StepImage
+        // 准备图片文件 + 构建 StepData（所有 Model 无关工作在 MainActor 完成）
         for index in 0..<count {
             let desc = index < stepDescriptions.count ? stepDescriptions[index] : nil
             let timestamp = index < markedTimestamps.count ? markedTimestamps[index] : 0
-
-            let step = Step(
-                stepNumber: index + 1,
-                descriptionText: desc?.descriptionText ?? "步骤 \(index + 1)",
-                tipNote: desc?.tipNote,
-                videoTimestampSeconds: timestamp
-            )
-
-            // 获取或生成图片文件
-            let imagePath: String
             let image = extractedImages[index]
 
+            let imagePath: String
             if index < urlCount {
-                // 复用 Actor 产出的 HEIC 文件
                 let sourceURL = extractedImageURLs[index]
                 let destURL = imageDir.appendingPathComponent(sourceURL.lastPathComponent)
                 if sourceURL.path != destURL.path {
-                    // 只在不同位置时复制
-                    if FileManager.default.fileExists(atPath: destURL.path) {
-                        try? FileManager.default.removeItem(at: destURL)
-                    }
+                    try? FileManager.default.removeItem(at: destURL)
                     do {
                         try FileManager.default.copyItem(at: sourceURL, to: destURL)
                         imagePath = destURL.path
                     } catch {
-                        // 复制失败则降级为重新编码
                         Logger.recipe.warning("HEIC 复制失败 \(error), 降级为重新编码")
                         imagePath = try encodeImageToHEIC(image, dir: imageDir)
                     }
@@ -304,11 +282,9 @@ final class AddRecipeViewModel {
                     imagePath = sourceURL.path
                 }
             } else {
-                // 降级：从 UIImage 编码
                 imagePath = try encodeImageToHEIC(image, dir: imageDir)
             }
 
-            // 生成缩略图
             let thumbName = "thumb_\(UUID().uuidString.prefix(12)).heic"
             let thumbURL = imageDir.appendingPathComponent(thumbName)
             let thumbnail = image.preparingThumbnail(of: CGSize(width: 300, height: 300))
@@ -316,21 +292,31 @@ final class AddRecipeViewModel {
                 try? thumbData.write(to: thumbURL, options: .atomic)
             }
 
-            let stepImage = StepImage(
+            stepDataList.append(RecipeSaveData.StepData(
+                stepNumber: index + 1,
+                descriptionText: desc?.descriptionText ?? "步骤 \(index + 1)",
+                tipNote: desc?.tipNote,
+                videoTimestampSeconds: timestamp,
                 imagePath: imagePath,
                 thumbnailPath: thumbURL.path,
-                timestampSeconds: timestamp,
                 orderIndex: index
-            )
-            step.images = [stepImage]
-            recipe.steps.append(step)
+            ))
         }
 
-        // 原子操作：保存 + 消费槽位
-        try await recipeRepo.saveAndConsumeSlot(recipe)
+        // ✅ 传递 Sendable 数据传输对象，不跨越 Actor 传递 @Model
+        let saveData = RecipeSaveData(
+            title: finalTitle,
+            bvNumber: videoInfo.bvid,
+            sourceURL: "https://www.bilibili.com/video/\(videoInfo.bvid)",
+            sourceAuthor: videoInfo.authorName,
+            cookTimeMinutes: nil,
+            difficultyLevel: 2,
+            steps: stepDataList
+        )
+
+        try await recipeRepo.saveAndConsumeSlot(with: saveData)
 
         flowState = .saved
-        return recipe
     }
 
     /// HEIC 编码保存（带唯一文件名）

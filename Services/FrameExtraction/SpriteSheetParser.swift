@@ -63,13 +63,12 @@ struct SpriteSheetParser {
             let cropRect = CGRect(x: x, y: y, width: cellWidth, height: cellHeight)
             guard let cropped = cgImage.cropping(to: cropRect) else { continue }
 
-            // 绘制到独立 bitmap 上下文，切断与原始雪碧图的 CGImage 共享引用
-            // 否则 SwiftUI 渲染多个缩略图时会因 Core Animation 缓冲复用导致画面叠加
-            UIGraphicsBeginImageContextWithOptions(cropRect.size, false, 1.0)
-            UIImage(cgImage: cropped, scale: 1, orientation: spriteImage.imageOrientation).draw(at: .zero)
-            let frameImage = UIGraphicsGetImageFromCurrentImageContext()
-                ?? UIImage(cgImage: cropped, scale: 1, orientation: spriteImage.imageOrientation)
-            UIGraphicsEndImageContext()
+            // 渲染到独立 bitmap（切断与原始雪碧图的 CGImage 数据共享）
+            // 使用 UIGraphicsImageRenderer 自动匹配屏幕 scale
+            let renderer = UIGraphicsImageRenderer(size: cropRect.size)
+            let frameImage = renderer.image { _ in
+                UIImage(cgImage: cropped).draw(in: CGRect(origin: .zero, size: cropRect.size))
+            }
 
             frames.append(FrameThumbnail(
                 image: frameImage,

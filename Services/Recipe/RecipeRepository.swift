@@ -1,6 +1,28 @@
 import Foundation
 import SwiftData
 import OSLog
+
+/// 食谱保存参数（Sendable，安全跨 Actor 传递）
+struct RecipeSaveData: Sendable {
+    let title: String
+    let bvNumber: String
+    let sourceURL: String
+    let sourceAuthor: String
+    let cookTimeMinutes: Int?
+    let difficultyLevel: Int
+
+    struct StepData: Sendable {
+        let stepNumber: Int
+        let descriptionText: String
+        let tipNote: String?
+        let videoTimestampSeconds: Int
+        let imagePath: String
+        let thumbnailPath: String
+        let orderIndex: Int
+    }
+    let steps: [StepData]
+}
+
 /// 食谱数据仓库
 /// 封装 SwiftData CRUD 操作 + 级联文件清理
 @ModelActor
@@ -49,21 +71,21 @@ actor RecipeRepository {
     // MARK: - 写入
 
     /// 保存新食谱 + 消费免费槽位（同一事务，原子操作）
-    func saveAndConsumeSlot(_ recipe: Recipe) throws {
-        // 确保 profile 存在（兜底：App 启动时的 ensureDefaultProfile 可能尚未完成）
+    /// ✅ 接收 Sendable 数据传输对象，不跨越 Actor 传递 @Model
+    func saveAndConsumeSlot(with data: RecipeSaveData) throws {
         try ensureDefaultProfile()
 
         // 重复检查
-        let bv = recipe.bvNumber
+        let bv = data.bvNumber
         var descriptor = FetchDescriptor<Recipe>(
             predicate: #Predicate { $0.bvNumber == bv && $0.isDeleted == false }
         )
         descriptor.fetchLimit = 1
         if try modelContext.fetch(descriptor).first != nil {
-            throw AppError.duplicateRecipe(recipe.title)
+            throw AppError.duplicateRecipe(data.title)
         }
 
-        // 消费免费槽位（带上限检查）
+        // 消费免费槽位
         if let profile = try fetchProfile(), !profile.isPremium {
             guard profile.freeSlotsUsed < AppConstants.freeSlotLimit else {
                 throw AppError.apiFailed(0, "免费槽位已用完，请升级以继续添加食谱")
@@ -71,10 +93,37 @@ actor RecipeRepository {
             profile.freeSlotsUsed += 1
         }
 
+        // 在 Actor 内部创建所有 @Model 对象（避免跨 Actor 边界）
+        let recipe = Recipe(
+            title: data.title,
+            bvNumber: data.bvNumber,
+            sourceURL: data.sourceURL,
+            sourceAuthor: data.sourceAuthor,
+            cookTimeMinutes: data.cookTimeMinutes,
+            difficultyLevel: data.difficultyLevel
+        )
+
+        for stepData in data.steps {
+            let step = Step(
+                stepNumber: stepData.stepNumber,
+                descriptionText: stepData.descriptionText,
+                tipNote: stepData.tipNote,
+                videoTimestampSeconds: stepData.videoTimestampSeconds
+            )
+            let stepImage = StepImage(
+                imagePath: stepData.imagePath,
+                thumbnailPath: stepData.thumbnailPath,
+                timestampSeconds: stepData.videoTimestampSeconds,
+                orderIndex: stepData.orderIndex
+            )
+            step.images = [stepImage]
+            recipe.steps.append(step)
+        }
+
         modelContext.insert(recipe)
         try modelContext.save()
         let used = (try? fetchProfile()?.freeSlotsUsed) ?? -1
-        Logger.recipe.info("食谱已保存: \(recipe.title) (免费槽位: \(used))")
+        Logger.recipe.info("食谱已保存: \(data.title) (免费槽位: \(used))")
     }
 
     /// 保存新食谱（不消费槽位，供升级用户使用）
@@ -94,7 +143,6 @@ actor RecipeRepository {
 
     /// 软删除食谱 + 级联清理关联文件
     func softDelete(_ recipe: Recipe) throws {
-        // 1. 收集所有关联文件路径（在标记删除之前）
         let fileURLs = recipe.steps.flatMap { step in
             step.images.compactMap { image in
                 [
@@ -104,18 +152,15 @@ actor RecipeRepository {
             }
         }.flatMap { $0 }
 
-        // 2. 标记软删除
         recipe.isDeleted = true
         recipe.updatedAt = Date()
         try modelContext.save()
 
-        // 3. 异步清理文件系统（失败不阻塞，仅记日志）
         let cleanup = FileCleanup()
         for url in fileURLs {
             cleanup.deleteFile(at: url)
         }
 
-        // 4. 释放免费额度（如用户未付费）
         if let profile = try fetchProfile(), !profile.isPremium {
             profile.freeSlotsUsed = max(0, profile.freeSlotsUsed - 1)
             try modelContext.save()
@@ -124,7 +169,7 @@ actor RecipeRepository {
         Logger.recipe.info("食谱已删除: \(recipe.title), 清理了 \(fileURLs.count) 个文件")
     }
 
-    /// 永久删除（软删除 30 天后执行，由后台清理逻辑触发）
+    /// 永久删除（软删除 30 天后执行）
     func hardDelete(_ recipe: Recipe) throws {
         modelContext.delete(recipe)
         try modelContext.save()
@@ -140,7 +185,7 @@ actor RecipeRepository {
         try modelContext.save()
     }
 
-    /// 检查并消耗免费额度
+    /// 检查免费槽位
     func checkFreeSlot() throws -> Bool {
         guard let profile = try fetchProfile() else { return false }
         return profile.canCreateRecipe
@@ -149,6 +194,9 @@ actor RecipeRepository {
     /// 消耗一个免费槽位
     func consumeFreeSlot() throws {
         guard let profile = try fetchProfile(), !profile.isPremium else { return }
+        guard profile.freeSlotsUsed < AppConstants.freeSlotLimit else {
+            throw AppError.apiFailed(0, "免费槽位已用完")
+        }
         profile.freeSlotsUsed += 1
         try modelContext.save()
     }
