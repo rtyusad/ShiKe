@@ -13,6 +13,7 @@ final class Recipe {
     var sourceAuthor: String
     var cookTimeMinutes: Int?
     var difficultyLevel: Int          // 1=简单, 2=中等, 3=困难
+    var coverImagePath: String?       // 食谱封面图路径（来自某个步骤截图）
     var isDeleted: Bool
     var createdAt: Date
     var updatedAt: Date

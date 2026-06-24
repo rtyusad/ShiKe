@@ -238,7 +238,7 @@ final class AddRecipeViewModel {
     }
 
     /// 保存食谱
-    func saveRecipe(title: String? = nil) async throws {
+    func saveRecipe(title: String? = nil, coverImageIndex: Int? = nil) async throws {
         guard let videoInfo = videoInfo else {
             throw AppError.apiFailed(0, "视频信息丢失")
         }
@@ -304,6 +304,14 @@ final class AddRecipeViewModel {
         }
 
         // ✅ 传递 Sendable 数据传输对象，不跨越 Actor 传递 @Model
+        // 封面图路径
+        let coverPath: String? = {
+            if let ci = coverImageIndex, ci < stepDataList.count {
+                return stepDataList[ci].imagePath
+            }
+            return stepDataList.first?.imagePath
+        }()
+
         let saveData = RecipeSaveData(
             title: finalTitle,
             bvNumber: videoInfo.bvid,
@@ -311,6 +319,7 @@ final class AddRecipeViewModel {
             sourceAuthor: videoInfo.authorName,
             cookTimeMinutes: nil,
             difficultyLevel: 2,
+            coverImagePath: coverPath,
             steps: stepDataList
         )
 

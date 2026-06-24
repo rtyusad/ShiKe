@@ -10,6 +10,7 @@ struct RecipeSaveData: Sendable {
     let sourceAuthor: String
     let cookTimeMinutes: Int?
     let difficultyLevel: Int
+    let coverImagePath: String?
 
     struct StepData: Sendable {
         let stepNumber: Int
@@ -103,6 +104,7 @@ actor RecipeRepository {
             cookTimeMinutes: data.cookTimeMinutes,
             difficultyLevel: data.difficultyLevel
         )
+        recipe.coverImagePath = data.coverImagePath
         modelContext.insert(recipe)
 
         for stepData in data.steps {

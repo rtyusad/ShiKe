@@ -17,7 +17,8 @@ struct CookingView: View {
                 cookingContent(step: step)
             }
         }
-        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .statusBarHidden(true)
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true  // 保持屏幕常亮
@@ -38,13 +39,22 @@ struct CookingView: View {
                 .padding(.top, 56)
                 .padding(.bottom, 16)
 
-            // 步骤截图
-            if let imageData = try? Data(contentsOf: URL(fileURLWithPath: step.images.first?.imagePath ?? "")),
-               let uiImage = UIImage(data: imageData) {
+            // 步骤截图（异步加载）
+            if let imagePath = step.images.first?.imagePath,
+               FileManager.default.fileExists(atPath: imagePath) {
                 WokRingFrame(size: nil) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
+                    AsyncImage(url: URL(fileURLWithPath: imagePath)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().aspectRatio(contentMode: .fit)
+                        case .failure, .empty:
+                            Rectangle().fill(Color.gray.opacity(0.2))
+                                .aspectRatio(16/10, contentMode: .fit)
+                        @unknown default:
+                            Rectangle().fill(Color.gray.opacity(0.2))
+                                .aspectRatio(16/10, contentMode: .fit)
+                        }
+                    }
                 }
                 .padding(.horizontal, 20)
             }

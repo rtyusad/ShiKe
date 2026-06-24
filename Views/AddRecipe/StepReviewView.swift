@@ -7,6 +7,7 @@ struct StepReviewView: View {
     @State private var recipeTitle: String = ""
     @State private var editedDescriptions: [String] = []
     @State private var editedTips: [String] = []
+    @State private var coverImageIndex: Int? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -71,13 +72,29 @@ struct StepReviewView: View {
     // MARK: - 步骤卡片
 
     private func stepCard(index: Int, image: UIImage) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        let isCover = coverImageIndex == index
+
+        return HStack(alignment: .top, spacing: 12) {
             // 步骤截图
-            Image(uiImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 100, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+            ZStack(alignment: .bottomTrailing) {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 100, height: 72)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                // 封面标记
+                if isCover {
+                    Text("封面")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.wokOrange)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .padding(4)
+                }
+            }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("步骤 \(index + 1)")
@@ -105,11 +122,27 @@ struct StepReviewView: View {
                 )
                 .font(.system(size: 12))
                 .foregroundColor(.ginger)
+
+                // 设为封面按钮
+                Button {
+                    coverImageIndex = (coverImageIndex == index) ? nil : index
+                } label: {
+                    Label(
+                        isCover ? "已设为封面" : "设为封面",
+                        systemImage: isCover ? "bookmark.fill" : "bookmark"
+                    )
+                    .font(.system(size: 11))
+                    .foregroundColor(isCover ? .wokOrange : .secondary.opacity(0.6))
+                }
             }
 
             Spacer()
         }
         .padding(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isCover ? Color.wokOrange : Color.clear, lineWidth: 2)
+        )
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
@@ -126,7 +159,7 @@ struct StepReviewView: View {
                             let tip = i < editedTips.count ? editedTips[i] : ""
                             vm.updateStepDescription(at: i, description: editedDescriptions[i], tip: tip.isEmpty ? nil : tip)
                         }
-                        _ = try await vm.saveRecipe(title: recipeTitle)
+                        _ = try await vm.saveRecipe(title: recipeTitle, coverImageIndex: coverImageIndex)
                     } catch let appError as AppError {
                         vm.setError(appError)
                     } catch {

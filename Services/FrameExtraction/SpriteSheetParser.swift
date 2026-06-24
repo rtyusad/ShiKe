@@ -10,7 +10,7 @@ struct SpriteSheetParser {
 
     /// 单帧数据
     struct FrameThumbnail: Identifiable {
-        public var id: Int { timestampSeconds }
+        public let id = UUID()  // 稳定唯一标识，杜绝 SwiftUI diff 错配
         let image: UIImage
         let timestampSeconds: Int
         let column: Int
