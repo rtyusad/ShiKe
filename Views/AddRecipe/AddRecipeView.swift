@@ -120,20 +120,21 @@ struct AddRecipeView: View {
                 Divider()
                     .overlay { Text("或").font(.caption).foregroundColor(.secondary).padding(.horizontal, 8).background(Color.ricePaper) }
 
-                // 手动创建入口
+                // 手动创建入口（即将推出）
                 Button {
-                    // TODO: 手动创建食谱（拍照+描述）
+                    // V1.1: 手动创建食谱（拍照+描述）
                 } label: {
-                    Label("手动创建食谱（拍照+描述）", systemImage: "camera")
+                    Label("手动创建食谱 · 即将推出", systemImage: "camera")
                         .font(.system(size: 15))
-                        .foregroundColor(.soyBrown)
+                        .foregroundColor(.secondary.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(
                             RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                         )
                 }
+                .disabled(true)
 
                 // 底部技术说明
                 Text("仅支持 bilibili.com 视频 · 不下载完整视频 · 仅提取关键帧截图")

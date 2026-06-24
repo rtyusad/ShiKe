@@ -7,14 +7,15 @@ struct FrameBrowserView: View {
     let markerVM: FrameMarkerViewModel
     let addVM: AddRecipeViewModel
 
-    @Environment(\.dismiss) private var dismiss
+    /// 双击放大图标记/取消标记
+    @State private var showMarkHint = false
 
     var body: some View {
         VStack(spacing: 0) {
             // 视频信息栏
             videoInfoBar
 
-            // 大图预览区
+            // 大图预览区 + 双击标记
             largePreview
 
             // 时间线
@@ -31,12 +32,14 @@ struct FrameBrowserView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("已选: \(markerVM.markedCount)")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.scallionGreen)
+                    .foregroundColor(markerVM.markedCount > 0 ? .scallionGreen : .secondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.scallionGreen.opacity(0.1))
+                            .fill(markerVM.markedCount > 0
+                                ? Color.scallionGreen.opacity(0.1)
+                                : Color.gray.opacity(0.08))
                     )
             }
         }
@@ -87,29 +90,55 @@ struct FrameBrowserView: View {
     private var largePreview: some View {
         VStack(spacing: 8) {
             if let frame = markerVM.selectedFrame {
+                let isMarked = markerVM.isMarked(frame.timestampSeconds)
+
                 ZStack {
                     WokRingFrame(size: nil) {
                         Image(uiImage: frame.image)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                     }
+                    // 双击标记
+                    .onTapGesture(count: 2) {
+                        markerVM.toggleMarkCurrent()
+                        // 闪烁提示
+                        withAnimation(.easeInOut(duration: 0.15)) { showMarkHint = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                            withAnimation { showMarkHint = false }
+                        }
+                    }
 
-                    // 时间戳标签
-                    Text(formatDuration(frame.timestampSeconds))
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                        .padding(8)
+                    // 标记状态指示器
+                    VStack(spacing: 4) {
+                        if showMarkHint || isMarked {
+                            Image(systemName: isMarked ? "checkmark.diamond.fill" : "diamond")
+                                .font(.system(size: 36))
+                                .foregroundColor(isMarked ? .scallionGreen : .white.opacity(0.7))
+                                .shadow(radius: 4)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+
+                        Text(formatDuration(frame.timestampSeconds))
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.6))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(8)
                 }
+
+                // 提示文字
+                Text(isMarked ? "✅ 已标记为步骤帧 · 双击取消" : "👆 双击大图标记为步骤帧")
+                    .font(.system(size: 12))
+                    .foregroundColor(isMarked ? .scallionGreen : .secondary.opacity(0.7))
             } else {
                 Rectangle()
                     .fill(Color.gray.opacity(0.1))
                     .overlay {
-                        Text("选择一帧查看大图")
+                        Text("点击时间线选择一帧查看大图")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -123,8 +152,9 @@ struct FrameBrowserView: View {
 
     private var bottomActions: some View {
         HStack(spacing: 16) {
+            // 取消 → 返回 URL 输入页 (P1-1 修复)
             Button {
-                dismiss()
+                addVM.reset()
             } label: {
                 Text("取消")
                     .font(.system(size: 16))
@@ -134,7 +164,6 @@ struct FrameBrowserView: View {
             Spacer()
 
             Button {
-                // 同步已标记的时间戳到 AddRecipeViewModel
                 let timestamps = markerVM.sortedMarkedTimestamps()
                 addVM.syncMarkedTimestamps(timestamps)
                 Task { await addVM.generateSteps() }

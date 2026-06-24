@@ -60,7 +60,7 @@ struct StepCardView: View {
                         Text(String(format: "%02d", currentIndex))
                             .font(.system(size: 36, weight: .bold))
                             .foregroundColor(.wokOrange)
-                        Text(step.descriptionText)
+                        Text("步骤 \(step.stepNumber)")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.soyBrown)
                     }

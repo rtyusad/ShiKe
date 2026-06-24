@@ -6,6 +6,8 @@ struct StepReviewView: View {
     @Bindable var vm: AddRecipeViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var recipeTitle: String = ""
+    @State private var editedDescriptions: [String] = []
+    @State private var editedTips: [String] = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,6 +24,8 @@ struct StepReviewView: View {
             .padding(.vertical, 12)
             .onAppear {
                 recipeTitle = vm.videoInfo?.title ?? ""
+                editedDescriptions = vm.stepDescriptions.map { $0.descriptionText }
+                editedTips = vm.stepDescriptions.map { $0.tipNote ?? "" }
             }
 
             Divider()
@@ -55,28 +59,32 @@ struct StepReviewView: View {
                 .frame(width: 100, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("步骤 \(index + 1)")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.wokOrange)
 
-                if index < vm.stepDescriptions.count {
-                    let desc = vm.stepDescriptions[index]
-                    Text(desc.descriptionText.isEmpty ? "待描述" : desc.descriptionText)
-                        .font(.system(size: 14))
-                        .foregroundColor(.soyBrown)
-                        .lineLimit(3)
+                // 可编辑描述
+                TextField("描述操作...",
+                    text: Binding(
+                        get: { editedDescriptions.indices.contains(index) ? editedDescriptions[index] : "" },
+                        set: { if editedDescriptions.indices.contains(index) { editedDescriptions[index] = $0 } }
+                    ),
+                    axis: .vertical
+                )
+                .font(.system(size: 14))
+                .foregroundColor(.soyBrown)
+                .lineLimit(2...4)
 
-                    if let tip = desc.tipNote, !tip.isEmpty {
-                        Label(tip, systemImage: "lightbulb")
-                            .font(.caption)
-                            .foregroundColor(.ginger)
-                    }
-                } else {
-                    Text("分析中...")
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
-                }
+                // 可编辑小贴士
+                TextField("小贴士（选填）",
+                    text: Binding(
+                        get: { editedTips.indices.contains(index) ? editedTips[index] : "" },
+                        set: { if editedTips.indices.contains(index) { editedTips[index] = $0 } }
+                    )
+                )
+                .font(.system(size: 12))
+                .foregroundColor(.ginger)
             }
 
             Spacer()
@@ -93,6 +101,11 @@ struct StepReviewView: View {
             Button {
                 Task {
                     do {
+                        // 回写编辑后的内容到 ViewModel
+                        for (i, _) in editedDescriptions.enumerated() {
+                            let tip = i < editedTips.count ? editedTips[i] : ""
+                            vm.updateStepDescription(at: i, description: editedDescriptions[i], tip: tip.isEmpty ? nil : tip)
+                        }
                         _ = try await vm.saveRecipe(title: recipeTitle)
                     } catch {
                         vm.setError(error as? AppError)

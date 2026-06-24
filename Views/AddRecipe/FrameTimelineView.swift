@@ -8,16 +8,16 @@ struct FrameTimelineView: View {
     var body: some View {
         VStack(spacing: 6) {
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 6) {
-                    ForEach(Array(vm.frames.enumerated()), id: \.offset) { index, frame in
+                HStack(spacing: 6) {
+                    ForEach(vm.frames) { frame in
                         FrameThumbnail(
                             image: frame.image,
                             timestamp: frame.timestampSeconds,
-                            isSelected: vm.selectedIndex == index,
+                            isSelected: vm.selectedFrame?.timestampSeconds == frame.timestampSeconds,
                             isMarked: vm.isMarked(frame.timestampSeconds)
                         )
                         .onTapGesture {
-                            vm.selectFrame(at: index)
+                            vm.selectFrame(timestamp: frame.timestampSeconds)
                         }
                     }
                 }
@@ -25,10 +25,12 @@ struct FrameTimelineView: View {
             }
 
             // 底部提示
-            Text("浏览: \(vm.totalFrames) 帧 (10×10 雪碧图) · 点击标记 →")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary.opacity(0.5))
-                .padding(.horizontal, 20)
+            HStack(spacing: 4) {
+                Text("点击缩略图浏览 · 双击大图标记/取消 · 已选 \(vm.markedCount) 帧")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary.opacity(0.6))
+            }
+            .padding(.horizontal, 20)
         }
     }
 }

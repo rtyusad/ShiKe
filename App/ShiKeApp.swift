@@ -5,6 +5,7 @@ import OSLog
 /// 启动时执行孤儿临时文件清理、注册网络监控
 @main
 struct ShiKeApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     private let container = AppContainer.shared
 
     init() {

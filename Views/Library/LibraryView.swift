@@ -15,14 +15,6 @@ struct LibraryView: View {
             }
         }
         .navigationTitle("我的食谱")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(destination: ProfileView(vm: container.makeProfileVM())) {
-                    Image(systemName: "person.circle")
-                        .font(.title3)
-                }
-            }
-        }
         .overlay {
             if vm.isLoading {
                 LoadingOverlay()

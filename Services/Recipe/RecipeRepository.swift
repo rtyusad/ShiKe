@@ -48,7 +48,33 @@ actor RecipeRepository {
 
     // MARK: - 写入
 
-    /// 保存新食谱
+    /// 保存新食谱 + 消费免费槽位（同一事务，原子操作）
+    func saveAndConsumeSlot(_ recipe: Recipe) throws {
+        // 重复检查
+        let bv = recipe.bvNumber
+        var descriptor = FetchDescriptor<Recipe>(
+            predicate: #Predicate { $0.bvNumber == bv && $0.isDeleted == false }
+        )
+        descriptor.fetchLimit = 1
+        if try modelContext.fetch(descriptor).first != nil {
+            throw AppError.duplicateRecipe(recipe.title)
+        }
+
+        // 消费免费槽位（带上限检查）
+        if let profile = try fetchProfile(), !profile.isPremium {
+            guard profile.freeSlotsUsed < AppConstants.freeSlotLimit else {
+                throw AppError.apiFailed(0, "免费槽位已用完，请升级以继续添加食谱")
+            }
+            profile.freeSlotsUsed += 1
+        }
+
+        modelContext.insert(recipe)
+        try modelContext.save()
+        let used = (try? fetchProfile()?.freeSlotsUsed) ?? -1
+        Logger.recipe.info("食谱已保存: \(recipe.title) (免费槽位: \(used))")
+    }
+
+    /// 保存新食谱（不消费槽位，供升级用户使用）
     func save(_ recipe: Recipe) throws {
         modelContext.insert(recipe)
         try modelContext.save()

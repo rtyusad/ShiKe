@@ -44,6 +44,12 @@ final class FrameMarkerViewModel {
         selectedIndex = index
     }
 
+    /// 按时间戳选择帧
+    func selectFrame(timestamp: Int) {
+        guard let index = frames.firstIndex(where: { $0.timestampSeconds == timestamp }) else { return }
+        selectedIndex = index
+    }
+
     func toggleMarkCurrent() {
         guard let frame = selectedFrame else { return }
         if markedTimestamps.contains(frame.timestampSeconds) {

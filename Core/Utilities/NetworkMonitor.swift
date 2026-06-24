@@ -30,11 +30,13 @@ final class NetworkMonitor {
     /// 是否有网络连接
     private(set) var isConnected: Bool = false
 
-    /// 在蜂窝网络下提示用户确认是否继续大数据量操作
-    func confirmIfExpensive() async -> Bool {
-        guard isExpensive else { return true }
-        // 由调用方使用 UI 确认，这里仅返回状态
-        return !isExpensive
+    /// 确认网络是否可用（MVP: 蜂窝网络不阻断，仅记录日志）
+    func confirmIfExpensive() -> Bool {
+        guard isConnected else { return false }
+        if isExpensive {
+            Logger.lifecycle.info("当前使用蜂窝网络，数据用量可能较大")
+        }
+        return true
     }
 
     // MARK: - 生命周期

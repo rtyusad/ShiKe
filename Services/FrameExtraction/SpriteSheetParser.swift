@@ -9,7 +9,8 @@ import OSLog
 struct SpriteSheetParser {
 
     /// 单帧数据
-    struct FrameThumbnail {
+    struct FrameThumbnail: Identifiable {
+        public var id: Int { timestampSeconds }
         let image: UIImage
         let timestampSeconds: Int
         let column: Int

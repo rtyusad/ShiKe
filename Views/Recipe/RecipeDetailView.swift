@@ -8,6 +8,7 @@ struct RecipeDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDeleteConfirm = false
+    @State private var showStepList = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -61,6 +62,62 @@ struct RecipeDetailView: View {
         } message: {
             Text("确定要删除「\(vm.recipe.title)」吗？此操作不可撤销。")
         }
+        .sheet(isPresented: $showStepList) {
+            stepListView
+        }
+    }
+
+    // MARK: - 步骤列表弹出页
+
+    private var stepListView: some View {
+        NavigationStack {
+            List {
+                ForEach(Array(vm.recipe.steps.enumerated()), id: \.offset) { index, step in
+                    Button {
+                        withAnimation { vm.goToStep(index) }
+                        showStepList = false
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text("\(step.stepNumber)")
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white)
+                                .frame(width: 28, height: 28)
+                                .background(index == vm.currentStepIndex ? Color.wokOrange : Color.gray.opacity(0.4))
+                                .clipShape(Circle())
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(step.descriptionText)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.soyBrown)
+                                    .lineLimit(2)
+                                if let tip = step.tipNote, !tip.isEmpty {
+                                    Text(tip)
+                                        .font(.caption)
+                                        .foregroundColor(.ginger)
+                                }
+                            }
+
+                            Spacer()
+
+                            if index == vm.currentStepIndex {
+                                Image(systemName: "checkmark")
+                                    .font(.caption)
+                                    .foregroundColor(.wokOrange)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .navigationTitle("全部步骤")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") { showStepList = false }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     // MARK: - 步骤导航
@@ -102,7 +159,7 @@ struct RecipeDetailView: View {
             // 全部步骤 + 开始跟做
             HStack(spacing: 20) {
                 Button {
-                    // TODO: 弹出步骤列表
+                    showStepList = true
                 } label: {
                     Label("全部步骤(\(vm.totalSteps))", systemImage: "list.bullet")
                         .font(.system(size: 14))

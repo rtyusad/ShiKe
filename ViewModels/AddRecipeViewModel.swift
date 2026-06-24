@@ -35,6 +35,7 @@ final class AddRecipeViewModel {
     // 高清提取进度
     private(set) var extractionProgress: String = ""
     private(set) var extractedImages: [UIImage] = []
+    private(set) var extractedImageURLs: [URL] = []  // Actor 产出的 HEIC 原始路径
     private(set) var stepDescriptions: [StepDescription] = []
 
     // 提取任务（用于取消）
@@ -138,8 +139,8 @@ final class AddRecipeViewModel {
             return
         }
 
-        // 蜂窝网络确认
-        guard await networkMonitor.confirmIfExpensive() else {
+        // 网络确认
+        guard networkMonitor.confirmIfExpensive() else {
             error = .networkUnavailable
             return
         }
@@ -147,6 +148,7 @@ final class AddRecipeViewModel {
         flowState = .generating
         error = nil
         extractedImages = []
+        extractedImageURLs = []
         stepDescriptions = []
 
         let spriteFrames = frameThumbnails.map { $0.image }
@@ -182,7 +184,8 @@ final class AddRecipeViewModel {
             }
         }
 
-        // 加载 HEIC 为 UIImage
+        // 记录 HEIC URL + 加载为 UIImage
+        extractedImageURLs = heicURLs
         for url in heicURLs {
             if let data = try? Data(contentsOf: url),
                let image = UIImage(data: data) {
@@ -203,15 +206,19 @@ final class AddRecipeViewModel {
         flowState = .reviewing
     }
 
+    /// 更新单个步骤描述（供 StepReviewView 编辑回写）
+    func updateStepDescription(at index: Int, description: String, tip: String?) {
+        guard stepDescriptions.indices.contains(index) else { return }
+        stepDescriptions[index] = StepDescription(
+            descriptionText: description,
+            tipNote: tip
+        )
+    }
+
     /// 保存食谱
     func saveRecipe(title: String? = nil) async throws -> Recipe {
         guard let videoInfo = videoInfo else {
             throw AppError.apiFailed(0, "视频信息丢失")
-        }
-
-        // AC08: 再次检查重复
-        if let existing = try await recipeRepo.findByBV(videoInfo.bvid) {
-            throw AppError.duplicateRecipe(existing.title)
         }
 
         let recipe = Recipe(
@@ -222,6 +229,11 @@ final class AddRecipeViewModel {
             cookTimeMinutes: nil,
             difficultyLevel: 2
         )
+
+        let docDir = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let imageDir = docDir.appendingPathComponent("Images")
+        try FileManager.default.createDirectory(at: imageDir, withIntermediateDirectories: true)
 
         // 创建 Step + StepImage
         for (index, image) in extractedImages.enumerated() {
@@ -235,16 +247,27 @@ final class AddRecipeViewModel {
                 videoTimestampSeconds: timestamp
             )
 
-            // 保存截图文件
-            let docDir = FileManager.default
-                .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let imageDir = docDir.appendingPathComponent("Images")
-            try FileManager.default.createDirectory(at: imageDir, withIntermediateDirectories: true)
-
-            let imageFileName = "step_\(UUID().uuidString.prefix(12)).heic"
-            let imageURL = imageDir.appendingPathComponent(imageFileName)
-            if let heicData = image.heicData(compressionQuality: AppConstants.heicCompressionQuality) {
-                try heicData.write(to: imageURL, options: .atomic)
+            // 复用 Actor 产出的 HEIC 文件（如存在），避免双重编码
+            let imagePath: String
+            if index < extractedImageURLs.count {
+                // 将 Actor 的 HEIC 文件移动/复制到永久位置
+                let sourceURL = extractedImageURLs[index]
+                let destURL = imageDir.appendingPathComponent(sourceURL.lastPathComponent)
+                if sourceURL != destURL {
+                    if FileManager.default.fileExists(atPath: destURL.path) {
+                        try FileManager.default.removeItem(at: destURL)
+                    }
+                    try FileManager.default.copyItem(at: sourceURL, to: destURL)
+                }
+                imagePath = destURL.path
+            } else {
+                // 降级：从 UIImage 编码（雪碧图降级场景）
+                let imageFileName = "step_\(UUID().uuidString.prefix(12)).heic"
+                let imageURL = imageDir.appendingPathComponent(imageFileName)
+                if let heicData = image.heicData(compressionQuality: AppConstants.heicCompressionQuality) {
+                    try heicData.write(to: imageURL, options: .atomic)
+                }
+                imagePath = imageURL.path
             }
 
             // 生成缩略图
@@ -256,7 +279,7 @@ final class AddRecipeViewModel {
             }
 
             let stepImage = StepImage(
-                imagePath: imageURL.path,
+                imagePath: imagePath,
                 thumbnailPath: thumbURL.path,
                 timestampSeconds: timestamp,
                 orderIndex: index
@@ -265,8 +288,8 @@ final class AddRecipeViewModel {
             recipe.steps.append(step)
         }
 
-        try await recipeRepo.save(recipe)
-        try await recipeRepo.consumeFreeSlot()
+        // 原子操作：保存 + 消费槽位（P1-6, P1-7 修复）
+        try await recipeRepo.saveAndConsumeSlot(recipe)
 
         flowState = .saved
         return recipe

@@ -107,6 +107,7 @@ final class AppContainer {
         self.iapService = IAPService()
         self.imageCache = ImageCache()
         self.networkMonitor = NetworkMonitor.shared
+        self.networkMonitor.start()
         self.fileCleanup = FileCleanup()
 
         Logger.lifecycle.info("AppContainer 初始化完成")
