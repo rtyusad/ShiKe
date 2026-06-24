@@ -70,12 +70,13 @@ struct CookingView: View {
                         switch phase {
                         case .success(let image):
                             image.resizable().aspectRatio(contentMode: .fit)
+                                .frame(maxHeight: 300)
                         case .failure, .empty:
                             Rectangle().fill(Color.gray.opacity(0.2))
-                                .aspectRatio(contentMode: .fit)
+                                .frame(height: 200)
                         @unknown default:
                             Rectangle().fill(Color.gray.opacity(0.2))
-                                .aspectRatio(contentMode: .fit)
+                                .frame(height: 200)
                         }
                     }
                 }

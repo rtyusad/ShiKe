@@ -20,6 +20,7 @@ struct StepCardView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
+                                .frame(maxHeight: 260)
                                 .scaleEffect(scale)
                                 .gesture(
                                     MagnificationGesture()
@@ -31,7 +32,7 @@ struct StepCardView: View {
                         } else {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.1))
-                                .aspectRatio(contentMode: .fit)
+                                .frame(height: 200)
                                 .overlay {
                                     Image(systemName: "photo")
                                         .font(.largeTitle)
