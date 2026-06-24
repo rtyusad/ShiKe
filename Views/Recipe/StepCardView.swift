@@ -31,7 +31,7 @@ struct StepCardView: View {
                         } else {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.1))
-                                .aspectRatio(16/10, contentMode: .fit)
+                                .aspectRatio(contentMode: .fit)
                                 .overlay {
                                     Image(systemName: "photo")
                                         .font(.largeTitle)

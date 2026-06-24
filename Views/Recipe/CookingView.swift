@@ -23,6 +23,7 @@ struct CookingView: View {
         .statusBarHidden(true)
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true  // 保持屏幕常亮
+            vm.speakCurrentStep()  // 进入跟做自动朗读第一步
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
@@ -71,10 +72,10 @@ struct CookingView: View {
                             image.resizable().aspectRatio(contentMode: .fit)
                         case .failure, .empty:
                             Rectangle().fill(Color.gray.opacity(0.2))
-                                .aspectRatio(16/10, contentMode: .fit)
+                                .aspectRatio(contentMode: .fit)
                         @unknown default:
                             Rectangle().fill(Color.gray.opacity(0.2))
-                                .aspectRatio(16/10, contentMode: .fit)
+                                .aspectRatio(contentMode: .fit)
                         }
                     }
                 }

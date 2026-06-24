@@ -100,7 +100,7 @@ final class CookingViewModel {
         elapsedSeconds = 0
     }
 
-    private func speakCurrentStep() {
+    func speakCurrentStep() {
         guard isVoiceEnabled, let step = currentStep else { return }
         let utterance = AVSpeechUtterance(string: step.descriptionText)
         utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")

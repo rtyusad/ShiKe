@@ -12,11 +12,11 @@ struct RecipeCard: View {
                 if let thumbnail = thumbnail {
                     Image(uiImage: thumbnail)
                         .resizable()
-                        .aspectRatio(16/10, contentMode: .fill)
+                        .aspectRatio(contentMode: .fill)
                 } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.15))
-                        .aspectRatio(16/10, contentMode: .fit)
+                        .frame(minHeight: 100)
                         .overlay {
                             Image(systemName: "photo")
                                 .font(.title2)
