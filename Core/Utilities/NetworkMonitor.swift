@@ -55,19 +55,21 @@ final class NetworkMonitor {
     // MARK: - 私有
 
     private func update(path: NWPath) {
-        isConnected = path.status == .satisfied
-        isConstrained = path.isConstrained
+        let connected = path.status == .satisfied
+        let constrained = path.isConstrained
+        let connection: ConnectionType = {
+            if path.usesInterfaceType(.wifi) { return .wifi }
+            if path.usesInterfaceType(.cellular) { return .cellular }
+            if path.usesInterfaceType(.wiredEthernet) { return .wired }
+            return .unknown
+        }()
 
-        if path.usesInterfaceType(.wifi) {
-            connectionType = .wifi
-        } else if path.usesInterfaceType(.cellular) {
-            connectionType = .cellular
-        } else if path.usesInterfaceType(.wiredEthernet) {
-            connectionType = .wired
-        } else {
-            connectionType = .unknown
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isConnected = connected
+            self.isConstrained = constrained
+            self.connectionType = connection
+            Logger.lifecycle.debug("网络状态: \(self.connectionType.rawValue) (connected: \(self.isConnected))")
         }
-
-        Logger.lifecycle.debug("网络状态: \(self.connectionType.rawValue) (connected: \(self.isConnected))")
     }
 }

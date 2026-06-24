@@ -98,6 +98,8 @@ struct FrameBrowserView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                     }
+                    .id(frame.id)        // 强制按帧 ID 重建视图，避免 SwiftUI 复用残留
+                    .clipped()            // 裁切溢出内容
                     // 双击标记
                     .onTapGesture(count: 2) {
                         markerVM.toggleMarkCurrent()

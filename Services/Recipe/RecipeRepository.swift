@@ -50,6 +50,9 @@ actor RecipeRepository {
 
     /// 保存新食谱 + 消费免费槽位（同一事务，原子操作）
     func saveAndConsumeSlot(_ recipe: Recipe) throws {
+        // 确保 profile 存在（兜底：App 启动时的 ensureDefaultProfile 可能尚未完成）
+        try ensureDefaultProfile()
+
         // 重复检查
         let bv = recipe.bvNumber
         var descriptor = FetchDescriptor<Recipe>(

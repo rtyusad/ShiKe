@@ -24,6 +24,11 @@ final class AddRecipeViewModel {
     }
 
     private(set) var flowState: FlowState = .urlInput
+
+    /// 允许子 View 回退状态（如从确认页返回帧浏览页）
+    func setFlowState(_ state: FlowState) {
+        flowState = state
+    }
     private(set) var urlText: String = ""
     private(set) var error: AppError?
 
@@ -206,6 +211,23 @@ final class AddRecipeViewModel {
         flowState = .reviewing
     }
 
+    /// 删除指定步骤
+    func removeStep(at index: Int) {
+        guard extractedImages.indices.contains(index) else { return }
+        extractedImages.remove(at: index)
+        if extractedImageURLs.indices.contains(index) { extractedImageURLs.remove(at: index) }
+        if stepDescriptions.indices.contains(index) { stepDescriptions.remove(at: index) }
+        if markedTimestamps.indices.contains(index) { markedTimestamps.remove(at: index) }
+    }
+
+    /// 拖动排序步骤（同步所有并行数组）
+    func moveSteps(from source: IndexSet, to destination: Int) {
+        extractedImages.move(fromOffsets: source, toOffset: destination)
+        extractedImageURLs.move(fromOffsets: source, toOffset: destination)
+        stepDescriptions.move(fromOffsets: source, toOffset: destination)
+        markedTimestamps.move(fromOffsets: source, toOffset: destination)
+    }
+
     /// 更新单个步骤描述（供 StepReviewView 编辑回写）
     func updateStepDescription(at index: Int, description: String, tip: String?) {
         guard stepDescriptions.indices.contains(index) else { return }
@@ -221,8 +243,14 @@ final class AddRecipeViewModel {
             throw AppError.apiFailed(0, "视频信息丢失")
         }
 
+        let finalTitle: String = {
+            if let t = title, !t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return t
+            }
+            return videoInfo.title
+        }()
         let recipe = Recipe(
-            title: title ?? videoInfo.title,
+            title: finalTitle,
             bvNumber: videoInfo.bvid,
             sourceURL: "https://www.bilibili.com/video/\(videoInfo.bvid)",
             sourceAuthor: videoInfo.authorName,
@@ -235,8 +263,12 @@ final class AddRecipeViewModel {
         let imageDir = docDir.appendingPathComponent("Images")
         try FileManager.default.createDirectory(at: imageDir, withIntermediateDirectories: true)
 
+        // 合并 extractedImages 和 extractedImageURLs，确保索引一致
+        let count = extractedImages.count
+        let urlCount = extractedImageURLs.count
+
         // 创建 Step + StepImage
-        for (index, image) in extractedImages.enumerated() {
+        for index in 0..<count {
             let desc = index < stepDescriptions.count ? stepDescriptions[index] : nil
             let timestamp = index < markedTimestamps.count ? markedTimestamps[index] : 0
 
@@ -247,27 +279,33 @@ final class AddRecipeViewModel {
                 videoTimestampSeconds: timestamp
             )
 
-            // 复用 Actor 产出的 HEIC 文件（如存在），避免双重编码
+            // 获取或生成图片文件
             let imagePath: String
-            if index < extractedImageURLs.count {
-                // 将 Actor 的 HEIC 文件移动/复制到永久位置
+            let image = extractedImages[index]
+
+            if index < urlCount {
+                // 复用 Actor 产出的 HEIC 文件
                 let sourceURL = extractedImageURLs[index]
                 let destURL = imageDir.appendingPathComponent(sourceURL.lastPathComponent)
-                if sourceURL != destURL {
+                if sourceURL.path != destURL.path {
+                    // 只在不同位置时复制
                     if FileManager.default.fileExists(atPath: destURL.path) {
-                        try FileManager.default.removeItem(at: destURL)
+                        try? FileManager.default.removeItem(at: destURL)
                     }
-                    try FileManager.default.copyItem(at: sourceURL, to: destURL)
+                    do {
+                        try FileManager.default.copyItem(at: sourceURL, to: destURL)
+                        imagePath = destURL.path
+                    } catch {
+                        // 复制失败则降级为重新编码
+                        Logger.recipe.warning("HEIC 复制失败 \(error), 降级为重新编码")
+                        imagePath = try encodeImageToHEIC(image, dir: imageDir)
+                    }
+                } else {
+                    imagePath = sourceURL.path
                 }
-                imagePath = destURL.path
             } else {
-                // 降级：从 UIImage 编码（雪碧图降级场景）
-                let imageFileName = "step_\(UUID().uuidString.prefix(12)).heic"
-                let imageURL = imageDir.appendingPathComponent(imageFileName)
-                if let heicData = image.heicData(compressionQuality: AppConstants.heicCompressionQuality) {
-                    try heicData.write(to: imageURL, options: .atomic)
-                }
-                imagePath = imageURL.path
+                // 降级：从 UIImage 编码
+                imagePath = try encodeImageToHEIC(image, dir: imageDir)
             }
 
             // 生成缩略图
@@ -275,7 +313,7 @@ final class AddRecipeViewModel {
             let thumbURL = imageDir.appendingPathComponent(thumbName)
             let thumbnail = image.preparingThumbnail(of: CGSize(width: 300, height: 300))
             if let thumbData = thumbnail?.heicData(compressionQuality: 0.8) {
-                try thumbData.write(to: thumbURL, options: .atomic)
+                try? thumbData.write(to: thumbURL, options: .atomic)
             }
 
             let stepImage = StepImage(
@@ -288,11 +326,22 @@ final class AddRecipeViewModel {
             recipe.steps.append(step)
         }
 
-        // 原子操作：保存 + 消费槽位（P1-6, P1-7 修复）
+        // 原子操作：保存 + 消费槽位
         try await recipeRepo.saveAndConsumeSlot(recipe)
 
         flowState = .saved
         return recipe
+    }
+
+    /// HEIC 编码保存（带唯一文件名）
+    private func encodeImageToHEIC(_ image: UIImage, dir: URL) throws -> String {
+        let fileName = "step_\(UUID().uuidString.prefix(12)).heic"
+        let fileURL = dir.appendingPathComponent(fileName)
+        guard let heicData = image.heicData(compressionQuality: AppConstants.heicCompressionQuality) else {
+            throw AppError.apiFailed(0, "图片编码失败")
+        }
+        try heicData.write(to: fileURL, options: .atomic)
+        return fileURL.path
     }
 
     /// 取消提取

@@ -4,7 +4,6 @@ import SwiftUI
 @MainActor
 struct StepReviewView: View {
     @Bindable var vm: AddRecipeViewModel
-    @Environment(\.dismiss) private var dismiss
     @State private var recipeTitle: String = ""
     @State private var editedDescriptions: [String] = []
     @State private var editedTips: [String] = []
@@ -30,15 +29,27 @@ struct StepReviewView: View {
 
             Divider()
 
-            // 步骤列表
-            ScrollView {
-                VStack(spacing: 16) {
-                    ForEach(Array(vm.extractedImages.enumerated()), id: \.offset) { index, image in
-                        stepCard(index: index, image: image)
+            // 步骤列表（可删除 + 拖动排序）
+            List {
+                ForEach(Array(vm.extractedImages.enumerated()), id: \.offset) { index, image in
+                    stepCard(index: index, image: image)
+                }
+                .onDelete { offsets in
+                    // 从最大索引开始删除避免越界
+                    for i in offsets.sorted(by: >) {
+                        vm.removeStep(at: i)
+                        editedDescriptions.remove(at: i)
+                        editedTips.remove(at: i)
                     }
                 }
-                .padding(20)
+                .onMove { from, to in
+                    vm.moveSteps(from: from, to: to)
+                    editedDescriptions.move(fromOffsets: from, toOffset: to)
+                    editedTips.move(fromOffsets: from, toOffset: to)
+                }
             }
+            .listStyle(.plain)
+            .environment(\.editMode, .constant(.active))
 
             // 保存按钮
             saveButton
@@ -46,6 +57,15 @@ struct StepReviewView: View {
         .background(Color.ricePaper)
         .navigationTitle("确认步骤")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("返回标记") {
+                    vm.setFlowState(.frameBrowsing)
+                }
+                .font(.system(size: 15))
+                .foregroundColor(.secondary)
+            }
+        }
     }
 
     // MARK: - 步骤卡片
@@ -107,8 +127,10 @@ struct StepReviewView: View {
                             vm.updateStepDescription(at: i, description: editedDescriptions[i], tip: tip.isEmpty ? nil : tip)
                         }
                         _ = try await vm.saveRecipe(title: recipeTitle)
+                    } catch let appError as AppError {
+                        vm.setError(appError)
                     } catch {
-                        vm.setError(error as? AppError)
+                        vm.setError(.apiFailed(0, error.localizedDescription))
                     }
                 }
             } label: {
