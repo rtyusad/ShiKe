@@ -93,7 +93,8 @@ actor RecipeRepository {
             profile.freeSlotsUsed += 1
         }
 
-        // 在 Actor 内部创建所有 @Model 对象（避免跨 Actor 边界）
+        // 在 Actor 内部创建 @Model 对象
+        // 关键：必须先 insert 再操作 relationship，否则 SwiftData 运行时崩溃
         let recipe = Recipe(
             title: data.title,
             bvNumber: data.bvNumber,
@@ -102,6 +103,7 @@ actor RecipeRepository {
             cookTimeMinutes: data.cookTimeMinutes,
             difficultyLevel: data.difficultyLevel
         )
+        modelContext.insert(recipe)
 
         for stepData in data.steps {
             let step = Step(
@@ -120,7 +122,6 @@ actor RecipeRepository {
             recipe.steps.append(step)
         }
 
-        modelContext.insert(recipe)
         try modelContext.save()
         let used = (try? fetchProfile()?.freeSlotsUsed) ?? -1
         Logger.recipe.info("食谱已保存: \(data.title) (免费槽位: \(used))")
