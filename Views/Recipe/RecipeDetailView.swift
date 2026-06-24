@@ -9,6 +9,7 @@ struct RecipeDetailView: View {
 
     @State private var showDeleteConfirm = false
     @State private var showStepList = false
+    @State private var showCooking = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -64,6 +65,9 @@ struct RecipeDetailView: View {
         }
         .sheet(isPresented: $showStepList) {
             stepListView
+        }
+        .fullScreenCover(isPresented: $showCooking) {
+            CookingView(vm: container.makeCookingVM(recipe: vm.recipe))
         }
     }
 
@@ -166,9 +170,9 @@ struct RecipeDetailView: View {
                         .foregroundColor(.secondary)
                 }
 
-                NavigationLink(destination: CookingView(
-                    vm: container.makeCookingVM(recipe: vm.recipe)
-                )) {
+                Button {
+                    showCooking = true
+                } label: {
                     Label("开始跟做", systemImage: "frying.pan")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.wokOrange)

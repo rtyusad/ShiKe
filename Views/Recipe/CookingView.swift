@@ -20,10 +20,7 @@ struct CookingView: View {
                 emptyStateView
             }
         }
-        .navigationBarHidden(true)
-        .navigationBarBackButtonHidden(true)
         .statusBarHidden(true)
-        .interactiveDismissDisabled()
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true  // 保持屏幕常亮
         }
