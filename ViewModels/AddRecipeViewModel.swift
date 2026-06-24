@@ -166,12 +166,11 @@ final class AddRecipeViewModel {
         extractedImageURLs = []
         stepDescriptions = []
 
-        let spriteFrames = frameThumbnails.map { $0.image }
         let stream = await frameExtractionActor.extract(
             cid: videoInfo.cid,
             bv: videoInfo.bvid,
             timestamps: markedTimestamps,
-            spriteFrames: spriteFrames
+            spriteThumbnails: frameThumbnails
         )
 
         var heicURLs: [URL] = []
@@ -224,6 +223,10 @@ final class AddRecipeViewModel {
     /// 删除指定步骤
     func removeStep(at index: Int) {
         guard extractedImages.indices.contains(index) else { return }
+        // 同步删除 FrameMarkerVM 中对应标记（防止返回标记页后再生成时恢复）
+        if markedTimestamps.indices.contains(index) {
+            frameMarkerVM?.removeMark(markedTimestamps[index])
+        }
         extractedImages.remove(at: index)
         if extractedImageURLs.indices.contains(index) { extractedImageURLs.remove(at: index) }
         if stepDescriptions.indices.contains(index) { stepDescriptions.remove(at: index) }

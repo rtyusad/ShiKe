@@ -57,7 +57,7 @@ actor FrameExtractionActor {
         cid: Int,
         bv: String,
         timestamps: [Int],
-        spriteFrames: [UIImage],
+        spriteThumbnails: [SpriteSheetParser.FrameThumbnail],
         maxConcurrent: Int = 3
     ) -> AsyncStream<ExtractionEvent> {
         AsyncStream { continuation in
@@ -66,16 +66,15 @@ actor FrameExtractionActor {
                     let urls = try await performExtraction(
                         cid: cid, bv: bv,
                         timestamps: timestamps,
-                        spriteFrames: spriteFrames,
+                        spriteFrames: spriteThumbnails.map { $0.image },
                         maxConcurrent: maxConcurrent,
                         onEvent: { continuation.yield($0) }
                     )
                     continuation.yield(.allComplete(urls))
                 } catch {
                     Logger.frameExtraction.error("管线失败: \(error)")
-                    // 降级为雪碧图
                     continuation.yield(.degradedToSprite(error.localizedDescription))
-                    let spriteURLs = try? await saveSpriteFrames(spriteFrames, for: timestamps)
+                    let spriteURLs = try? await saveSpriteFrames(spriteThumbnails, for: timestamps)
                     continuation.yield(.allComplete(spriteURLs ?? []))
                 }
                 continuation.finish()
@@ -212,16 +211,19 @@ actor FrameExtractionActor {
 
     // MARK: - 降级：保存雪碧图帧
 
-    private func saveSpriteFrames(_ frames: [UIImage], for timestamps: [Int]) async throws -> [URL] {
+    private func saveSpriteFrames(_ thumbnails: [SpriteSheetParser.FrameThumbnail], for timestamps: [Int]) async throws -> [URL] {
         let docDir = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Images")
         try FileManager.default.createDirectory(at: docDir, withIntermediateDirectories: true)
 
+        // 按时间戳匹配帧（而非按索引），确保只保存用户选中的帧
+        let timestampSet = Set(timestamps)
+        let matched = thumbnails.filter { timestampSet.contains($0.timestampSeconds) }
+
         var urls: [URL] = []
-        for (index, frame) in frames.enumerated() {
-            guard index < timestamps.count else { break }
-            guard let heicData = frame.heicData(compressionQuality: AppConstants.heicCompressionQuality) else {
+        for frame in matched {
+            guard let heicData = frame.image.heicData(compressionQuality: AppConstants.heicCompressionQuality) else {
                 continue
             }
             let fileName = "sprite_step_\(UUID().uuidString.prefix(12)).heic"

@@ -15,6 +15,9 @@ struct CookingView: View {
                 completedView
             } else if let step = vm.currentStep {
                 cookingContent(step: step)
+            } else {
+                // 空状态兜底：防止黑屏无法退出
+                emptyStateView
             }
         }
         .navigationBarHidden(true)
@@ -171,6 +174,37 @@ struct CookingView: View {
             .padding(.vertical, 20)
             .padding(.bottom, 32)
         }
+    }
+
+    // MARK: - 空状态兜底
+
+    private var emptyStateView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 48))
+                .foregroundColor(.wokOrange)
+            Text("暂无可显示的步骤")
+                .font(.title2)
+                .foregroundColor(.white)
+            Text("请返回食谱详情页检查步骤是否完整")
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.5))
+            Button {
+                dismiss()
+            } label: {
+                Text("返回食谱")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.wokOrange)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(.top, 16)
+            Spacer()
+        }
+        .padding(40)
     }
 
     // MARK: - 完成视图

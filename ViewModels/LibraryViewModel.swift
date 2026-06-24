@@ -52,10 +52,29 @@ final class LibraryViewModel {
     }
 
     func thumbnailFor(_ recipe: Recipe) -> UIImage? {
-        guard let firstStep = recipe.steps.first,
-              let firstImage = firstStep.images.first else {
-            return nil
+        // 1. 优先使用用户选定的封面图
+        if let coverPath = recipe.coverImagePath {
+            if let cached = imageCache.image(forKey: coverPath) { return cached }
+            if let loaded = loadImageFromDisk(coverPath) {
+                imageCache.setImage(loaded, forKey: coverPath)
+                return loaded
+            }
         }
-        return imageCache.image(forKey: firstImage.thumbnailPath)
+        // 2. 降级：使用第一步的缩略图
+        if let firstStep = recipe.steps.first,
+           let firstImage = firstStep.images.first {
+            if let cached = imageCache.image(forKey: firstImage.thumbnailPath) { return cached }
+            if let loaded = loadImageFromDisk(firstImage.thumbnailPath) {
+                imageCache.setImage(loaded, forKey: firstImage.thumbnailPath)
+                return loaded
+            }
+        }
+        return nil
+    }
+
+    private func loadImageFromDisk(_ path: String) -> UIImage? {
+        guard !path.isEmpty,
+              let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
+        return UIImage(data: data)
     }
 }

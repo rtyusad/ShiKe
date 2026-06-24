@@ -52,7 +52,20 @@ final class RecipeDetailViewModel {
     func imageForCurrentStep() -> UIImage? {
         guard let step = currentStep,
               let image = step.images.first else { return nil }
-        return imageCache.image(forKey: image.imagePath)
+
+        // 1. ImageCache
+        if let cached = imageCache.image(forKey: image.imagePath) {
+            return cached
+        }
+
+        // 2. 降级：磁盘直接加载 + 回填缓存
+        let url = URL(fileURLWithPath: image.imagePath)
+        if let data = try? Data(contentsOf: url),
+           let uiImage = UIImage(data: data) {
+            imageCache.setImage(uiImage, forKey: image.imagePath)
+            return uiImage
+        }
+        return nil
     }
 
     func deleteRecipe() async throws {

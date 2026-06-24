@@ -63,6 +63,11 @@ final class FrameMarkerViewModel {
         markedTimestamps.contains(timestamp)
     }
 
+    /// 移除指定时间戳的标记（供步骤删除时同步）
+    func removeMark(_ timestamp: Int) {
+        markedTimestamps.remove(timestamp)
+    }
+
     /// 获取已标记的时间戳列表（按时间排序）
     func sortedMarkedTimestamps() -> [Int] {
         markedTimestamps.sorted()
